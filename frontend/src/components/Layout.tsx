@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { Menu, X, Home, Upload, LogOut, Zap, Globe } from 'lucide-react';
@@ -58,8 +58,8 @@ const Layout = () => {
                                 whileHover={{ scale: 1.02, x: 4 }}
                                 whileTap={{ scale: 0.98 }}
                                 className={`flex items-center space-x-3 p-4 rounded-2xl transition-all ${location.pathname === item.path
-                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/50'
-                                        : 'text-gray-700 hover:bg-white/60'
+                                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/50'
+                                    : 'text-gray-700 hover:bg-white/60'
                                     }`}
                             >
                                 <item.icon className="w-5 h-5" />
@@ -141,8 +141,8 @@ const Layout = () => {
                                             to={item.path}
                                             onClick={() => setSidebarOpen(false)}
                                             className={`flex items-center space-x-3 p-4 rounded-2xl transition-all ${location.pathname === item.path
-                                                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white'
-                                                    : 'text-gray-700 hover:bg-gray-100'
+                                                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white'
+                                                : 'text-gray-700 hover:bg-gray-100'
                                                 }`}
                                         >
                                             <item.icon />

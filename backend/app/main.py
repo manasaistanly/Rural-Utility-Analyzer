@@ -15,6 +15,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi.staticfiles import StaticFiles
+import os
+os.makedirs("data/uploads", exist_ok=True)
+app.mount("/static", StaticFiles(directory="data/uploads"), name="static")
+
 # MongoDB connection lifecycle
 @app.on_event("startup")
 async def startup_db_client():

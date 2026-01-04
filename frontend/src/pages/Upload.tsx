@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import { useLanguage } from '../context/LanguageContext';
 import { Upload as UploadIcon, CheckCircle, FileText, Camera, Image as ImageIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -33,34 +34,22 @@ const UploadPage = () => {
             formData.append('bill_type', billType);
 
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:8001/api/v1/bills/upload', {
-                method: 'POST',
+
+            // Using axios for better error handling and automatic multipart headers
+            const response = await axios.post('http://localhost:8001/api/v1/bills/upload', formData, {
                 headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                body: formData
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
             });
 
-            if (response.ok) {
-                const data = await response.json();
+            if (response.status === 200) {
                 setUploadComplete(true);
-                // Success toast or minimal feedback could go here if needed
-            } else {
-                const errData = await response.text();
-                let message = `Upload failed: ${response.statusText}`;
-                try {
-                    // Try to parse JSON error from backend if possible
-                    const jsonErr = JSON.parse(errData);
-                    if (jsonErr.detail) message = jsonErr.detail;
-                } catch {
-                    // Fallback to substring if not JSON
-                    message = errData.substring(0, 150);
-                }
-                setErrorMsg(message);
             }
         } catch (error: any) {
             console.error("Error uploading file:", error);
-            setErrorMsg(`Network Error: ${error.message || "Unknown error"}`);
+            const msg = error.response?.data?.detail || error.message || "Upload failed";
+            setErrorMsg(msg);
         } finally {
             setLoading(false);
         }
@@ -89,8 +78,8 @@ const UploadPage = () => {
                 <button
                     onClick={() => setBillType('electricity')}
                     className={`px-8 py-3 rounded-2xl font-semibold transition-all ${billType === 'electricity'
-                            ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg scale-105'
-                            : 'bg-white/70 text-gray-600 hover:bg-white border border-gray-200'
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg scale-105'
+                        : 'bg-white/70 text-gray-600 hover:bg-white border border-gray-200'
                         }`}
                 >
                     ⚡ Electricity Bill
@@ -98,8 +87,8 @@ const UploadPage = () => {
                 <button
                     onClick={() => setBillType('water')}
                     className={`px-8 py-3 rounded-2xl font-semibold transition-all ${billType === 'water'
-                            ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg scale-105'
-                            : 'bg-white/70 text-gray-600 hover:bg-white border border-gray-200'
+                        ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg scale-105'
+                        : 'bg-white/70 text-gray-600 hover:bg-white border border-gray-200'
                         }`}
                 >
                     💧 Water Bill
