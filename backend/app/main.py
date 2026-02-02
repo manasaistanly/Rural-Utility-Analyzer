@@ -7,7 +7,7 @@ from app.routers import auth, bills, analysis, tts
 app = FastAPI(title=settings.PROJECT_NAME)
 
 # CORS Configuration
-# Explicitly allow production Vercel URL + regex for preview deployments + localhost
+# Allow production Vercel URL + all preview deployments + localhost
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -16,7 +16,7 @@ app.add_middleware(
         "http://localhost:5173",
         "http://localhost:8000",
     ],
-    allow_origin_regex=r"^https://.*\.vercel\.app$",
+    allow_origin_regex=r"^https://rural-utility-analyzer.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
