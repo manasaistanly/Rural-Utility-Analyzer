@@ -277,9 +277,57 @@ def parse_bill_data(text: str, uploaded_date=None):
     # --- 1. PRODUCTION-GRADE UNITS PARSING ---
     # Context-aware extraction with OCR error handling
     
-    # Units patterns with priority (higher = more reliable)
+    # PRIORITY 1: Try to calculate from meter readings (most reliable for water bills)
+    calculated_units = None
+    print("OCR: Attempting to calculate units from meter readings...")
+    
+    # Enhanced patterns for Indian water bills (Present/Prev readings)
+    pres_patterns = [
+        r'(?i)(?:Present|Pres|Current)(?:\s*Rdg)?(?:.|\n){0,50}?[:=-]?\s*(\d{5,})',
+        r'(?i)(?:ಇಂದಿನ|ಆಂSೇ.*?ಸ್ವಚನ)(?:.|\n){0,50}?(\d{5,})',  # Kannada for Present
+    ]
+    prev_patterns = [
+        r'(?i)(?:Previous|Prev|Earlier)(?:\s*Rdg)?(?:.|\n){0,50}?[:=-]?\s*(\d{5,})',
+        r'(?i)(?:ಹಿಂದಿನ|ಮೊದಲ.*?ಸ್ವಚನ)(?:.|\n){0,50}?(\d{5,})',  # Kannada for Previous
+    ]
+    
+    present_reading = None
+    prev_reading = None
+    
+    # Try to find Present reading
+    for pattern in pres_patterns:
+        match = re.search(pattern, text)
+        if match:
+            try:
+                present_reading = int(match.group(1))
+                print(f"OCR: Found Present reading: {present_reading}")
+                break
+            except (ValueError, IndexError):
+                continue
+    
+    # Try to find Previous reading
+    for pattern in prev_patterns:
+        match = re.search(pattern, text)
+        if match:
+            try:
+                prev_reading = int(match.group(1))
+                print(f"OCR: Found Previous reading: {prev_reading}")
+                break
+            except (ValueError, IndexError):
+                continue
+    
+    # Calculate if both found
+    if present_reading and prev_reading and present_reading > prev_reading:
+        calculated_units = present_reading - prev_reading
+        print(f"OCR: Calculated units: {present_reading} - {prev_reading} = {calculated_units}")
+    
+    # PRIORITY 2: Extract from direct consumption fields
     units_patterns = [
-        # Highest priority - explicit unit labels
+        # HIGHEST PRIORITY - Water bill specific consumption labels
+        (r'(?i)Consumption[:\s]+(\d+\.?\d*)\s*(?:Cubic\s*Meter|CBM)', 12),
+        (r'(?i)Consumption[:\s]+(\d+\.?\d*)\s*(?:L[it]?t?r?e?s?|KL)', 12),
+        
+        # High priority - explicit unit labels
         (r'(?i)(?:Units\s*Consumed|Consumed\s*Units)(?:.|\n){0,20}?[:=-]?\s*(\d+\.?\d*)', 10),
         (r'(?i)(?:Units\s*Billed|Billed\s*Units)(?:.|\n){0,20}?[:=-]?\s*(\d+\.?\d*)', 10),
         (r'(?i)(?:Total\s*Units?)(?:.|\n){0,20}?[:=-]?\s*(\d+\.?\d*)', 10),
@@ -288,26 +336,22 @@ def parse_bill_data(text: str, uploaded_date=None):
         (r'(?i)(?:Total\s*Writ|Fetal\s*Unit|Total\s*Wnit)(?:.|\n){0,20}?[:=-]?\s*(\d+\.?\d*)', 9),
         (r'(?i)(?:Tetal\s*Unit|Totel\s*Unit|Totai\s*Unit)(?:.|\n){0,20}?[:=-]?\s*(\d+\.?\d*)', 9),
         
+        # Generic Consumption (medium priority)
+        (r'(?i)(?:Consumption)(?:.|\n){0,30}?[:=-]?\s*(\d+\.?\d*)', 6),
+        
         # OCR errors - common misreads of "Units"
-        (r'(?i)(?:Wits|Wnits|Urits|Unifs)(?:.|\n){0,10}?[:=-]?\s*(\d+\.?\d*)', 8),
+        (r'(?i)(?:Wits|Wnits|Urits|Unifs)(?:.|\n){0,10}?[:=-]?\s*(\d+\.?\d*)', 5),
         
-        # Water-specific patterns
-        (r'(?i)(?:Meter\s*Reading|Current\s*Reading)(?:.|\n){0,20}?[:=-]?\s*(\d+\.?\d*)', 7),
-        (r'(?i)(?:Consumption.*?L[it]rs?)(?:.|\n){0,20}?[:=-]?\s*(\d+\.?\d*)', 7),
-        
-        # Generic consumption
-        (r'(?i)(?:Consumption)(?:.|\n){0,20}?[:=-]?\s*(\d+\.?\d*)', 6),
-        
-        # Units with measurement suffix (medium priority)
-        (r'(\d+\.?\d*)\s*(?:kWh|KWH|kwh)', 5),
-        (r'(\d+\.?\d*)\s*(?:KL|kl|Kl)', 5),
-        (r'(\d+\.?\d*)\s*(?:Units|units|UNITS)', 4),
+        # Units with measurement suffix (lower priority to avoid billing amounts)
+        (r'(\d+\.?\d*)\s*(?:kWh|KWH|kwh)', 4),
+        (r'(\d+\.?\d*)\s*(?:KL|kl|Kl)', 4),
+        (r'(\d+\.?\d*)\s*(?:Units|units|UNITS)', 3),
         
         # Difference calculation pattern (common in Indian bills)
-        (r'(?i)(?:Difference|Diff)(?:.|\n){0,20}?[:=-]?\s*(\d+\.?\d*)', 3),
+        (r'(?i)(?:Difference|Diff)(?:.|\n){0,20}?[:=-]?\s*(\d+\.?\d*)', 2),
         
-        # Generic "Units" label (lower priority)
-        (r'(?i)(?:Units)(?:.|\n){0,15}?[:=-]?\s*(\d+\.?\d*)', 2),
+        # Generic "Units" label (lowest priority)
+        (r'(?i)(?:Units)(?:.|\n){0,15}?[:=-]?\s*(\d+\.?\d*)', 1),
     ]
     
     potential_units = []
@@ -323,32 +367,16 @@ def parse_bill_data(text: str, uploaded_date=None):
             except (ValueError, IndexError):
                 continue
     
-    # Fallback: Try to calculate from meter readings (Present - Previous)
-    if not potential_units:
-        print("OCR: No direct units found, trying to calculate from meter readings...")
-        meter_pattern = r'(?i)(?:Present|Current)(?:.|\n){0,50}?(\d{5,})'
-        prev_pattern = r'(?i)(?:Previous|Prev)(?:.|\n){0,50}?(\d{5,})'
-        
-        present_match = re.search(meter_pattern, text)
-        prev_match = re.search(prev_pattern, text)
-        
-        if present_match and prev_match:
-            try:
-                present_reading = int(present_match.group(1))
-                prev_reading = int(prev_match.group(1))
-                calculated_units = present_reading - prev_reading
-                
-                if 1 <= calculated_units <= 100000:
-                    potential_units.append((calculated_units, 7))
-                    print(f"OCR: Calculated units from readings: {present_reading} - {prev_reading} = {calculated_units}")
-            except (ValueError, IndexError):
-                pass
-    
-    # Select units with highest priority
-    if potential_units:
+    # DECISION LOGIC: Prefer calculated units if available and reasonable
+    if calculated_units and 1 <= calculated_units <= 100000:
+        # Use calculated units (highest reliability)
+        data["units"] = calculated_units
+        print(f"OCR: Selected CALCULATED units: {calculated_units}")
+    elif potential_units:
+        # Use extracted units if calculation not available
         sorted_units = sorted(potential_units, key=lambda x: (x[1], x[0]), reverse=True)
         data["units"] = sorted_units[0][0]
-        print(f"OCR: Selected units: {data['units']} (priority: {sorted_units[0][1]})")
+        print(f"OCR: Selected EXTRACTED units: {data['units']} (priority: {sorted_units[0][1]})")
     else:
         print("OCR: No valid units found in bill")
 
@@ -356,26 +384,22 @@ def parse_bill_data(text: str, uploaded_date=None):
     # Context-aware extraction with priority for total bill amounts
     
     # Amount patterns with context (higher priority for bill totals)
+    # Updated to handle comma separators (1,066.18) and spaces (890. 18)
     amount_patterns = [
-        # Highest priority - explicit bill/total amounts (with OCR error handling)
-        (r'(?i)(?:Bill\s*A[mn]ou?nt|A[mn]ou?nt\s*Payable)(?:.|\n){0,30}?₹?\s*(\d{3,}\.?\d{0,2})', 10),
-        (r'(?i)(?:Total\s*A[mn]ou?nt|Net\s*A[mn]ou?nt)(?:.|\n){0,30}?₹?\s*(\d{3,}\.?\d{0,2})', 10),
-        (r'(?i)(?:Total\s*Payable|Amount\s*Due)(?:.|\n){0,30}?₹?\s*(\d{3,}\.?\d{0,2})', 9),
-        (r'(?i)(?:Grand\s*Total|Final\s*Amount)(?:.|\n){0,30}?₹?\s*(\d{3,}\.?\d{0,2})', 9),
-        
-        # Special pattern for bills - amount after series of charges
-        (r'(?i)(?:Loss/Gain|Adjustments|Surcharge)(?:.|\n){0,100}?(\d{4,}\.00)', 8),
+        # Highest priority - explicit bill/total amounts (with comma handling)
+        (r'(?i)(?:Bill\s*A[mn]ou?nt|A[mn]ou?nt\s*Payable)(?:.|\n){0,30}?₹?\s*([\d,]+\.?\d{0,2})', 10),
+        (r'(?i)(?:Total\s*A[mn]ou?nt|Net\s*A[mn]ou?nt)(?:.|\n){0,30}?₹?\s*([\d,]+\.?\d{0,2})', 10),
+        (r'(?i)(?:Total\s*Payable|Amount\s*Due)(?:.|\n){0,30}?₹?\s*([\d,]+\.?\d{0,2})', 10),
+        (r'(?i)(?:Current\s*Bill)(?:.|\n){0,30}?₹?\s*([\d,]+\.?\d{0,2})', 10),
+        (r'(?i)(?:Grand\s*Total|Final\s*Amount)(?:.|\n){0,30}?₹?\s*([\d,]+\.?\d{0,2})', 9),
         
         # Medium priority - generic amount labels
-        (r'(?i)(?:Total)(?:.|\n){0,20}?[:=-]?\s*₹?\s*(\d{3,}\.?\d{0,2})', 6),
-        (r'(?i)(?:Payable)(?:.|\n){0,20}?[:=-]?\s*₹?\s*(\d{3,}\.?\d{0,2})', 6),
-        (r'(?i)(?:Amount)(?:.|\n){0,15}?[:=-]?\s*₹?\s*(\d{3,}\.?\d{0,2})', 5),
+        (r'(?i)(?:Total)(?:.|\n){0,20}?[:=-]?\s*₹?\s*([\d,]+\.?\d{0,2})', 6),
+        (r'(?i)(?:Payable)(?:.|\n){0,20}?[:=-]?\s*₹?\s*([\d,]+\.?\d{0,2})', 6),
+        (r'(?i)(?:Amount)(?:.|\n){0,15}?[:=-]?\s*₹?\s*([\d,]+\.?\d{0,2})', 5),
         
         # Lower priority - standalone amounts with rupee symbol
-        (r'₹\s*(\d{3,}\.?\d{0,2})\b', 3),
-        
-        # Lowest priority - standalone 4-5 digit amounts with .00 ending
-        (r'\b(\d{4,5}\.00)\b', 2),  # Common format for Indian bill totals
+        (r'₹\s*([\d,]+\.?\d{0,2})\b', 3),
     ]
     
     potential_amounts = []
@@ -383,6 +407,8 @@ def parse_bill_data(text: str, uploaded_date=None):
         matches = re.finditer(pattern, text)
         for match in matches:
             amount_str = match.group(1)
+            # Remove commas and spaces from amount string
+            amount_str = amount_str.replace(',', '').replace(' ', '')
             try:
                 val = float(amount_str)
                 # Sanity checks for valid bill amounts

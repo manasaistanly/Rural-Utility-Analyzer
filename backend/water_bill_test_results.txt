@@ -1,0 +1,118 @@
+================================================================================
+WATER BILL OCR TEST
+================================================================================
+
+Raw Text:
+OY Add J, Consumption Dettils ee
+QS sews / Prev Rdg : | 84300)
+, - 298 280 / Billing Details
+Non aie / Water Charges ; oo 306,.00 .
+WOT wey / Meter Charges’: . DKON, |
+wesdo8 au / Sanitary Charges me
+ba mm me, By / S.C FoRBareygll™ ce
+930 223 / Other Charges : 0.00
+&008 wee / Arrears : ) 0.00
+28 / Interest : a 0.0u
+wy ag /TotalAmount: yi ay
+swore seg / Adv Amount - 0,00
+re
+
+asanmaenwan nen me «
+
+—-—-lUlUlUN
+
+euann ee 2 Fe
+
+ass avd 1 oneumpton De Gils a
+
+BOOS sews / Pres Rdg :
+
+se8g0u
+
+“OOK apes / Prev Rdg :
+
+843000 !
+
+es / Consumption- Ltrs :
+
+we enn een, 200 |
+
+ee
+
+QOS avd / Billing Details
+
+Neos iy / Water Charges :
+
+306,00
+
+RNs ad / Meter Charges’:
+
+60; 0
+
+Leeidoa ay 1 Sanitary Charges : .
+
+aoe
+
+OU
+
+A we 38 / SOF
+
+Oo)
+
+of Berewail
+
+650
+
+hi
+
+oad sig / Other Charges :
+
+0. Ou
+
+8008 ees / Arrears :
+
+00
+
+wa / Interest :
+
+0. 0u
+
+wth ny | Total Amount :
+
+1121. vu
+
+i a rer rrrt Sr reel.
+
+BONS DNS / Adv Amount :
+
+0. 00
+
+ount | Due’:
+
+ot
+
+. ve
+
+es & sag Net .
+
+ane
+
+Nt. ea
+
+ne
+
+a ft fanat¥in ee
+
+A
+
+cfel
+
+iD "
+
+NE
+
+================================================================================
+PARSED RESULTS:
+Units: 200.0
+Amount: ₹1121.0
+Date: 2026-02-02
