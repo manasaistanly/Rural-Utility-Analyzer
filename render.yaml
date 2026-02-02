@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: rural-utility-backend
+    env: docker
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    plan: free
+    region: singapore
+    envVars:
+      - key: MONGODB_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 11520
+    autoDeploy: true
