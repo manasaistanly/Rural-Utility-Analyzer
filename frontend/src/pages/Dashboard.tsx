@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import API_BASE_URL from '../config';
 import { useLanguage } from '../context/LanguageContext';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Volume2, Sun, Droplets, Zap, VolumeX, Eye, FileText, X } from 'lucide-react';
+import { Volume2, Sun, Droplets, Zap, Eye, FileText, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Dashboard = () => {
@@ -181,10 +181,7 @@ const Dashboard = () => {
         speak(summary);
     };
 
-    const stopSpeech = () => {
-        window.speechSynthesis.cancel();
-        setIsSpeaking(false);
-    };
+
 
     const Card = ({ title, value, icon: Icon, color, delay }: any) => (
         <motion.div

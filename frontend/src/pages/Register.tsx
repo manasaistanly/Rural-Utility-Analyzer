@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { Lock, User, Zap, ArrowRight, Loader2, Mail } from 'lucide-react';
@@ -7,7 +7,7 @@ import axios from 'axios';
 import API_BASE_URL from '../config';
 
 const Register = () => {
-    const { t, language, setLanguage } = useLanguage();
+    const { language, setLanguage } = useLanguage();
     const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
@@ -17,7 +17,7 @@ const Register = () => {
     const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleRegister = async (e: React.FormEvent) => {
+    const handleRegister = async (e: FormEvent) => {
         e.preventDefault();
         setError('');
         setSuccess('');
