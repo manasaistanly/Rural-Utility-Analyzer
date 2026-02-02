@@ -8,16 +8,12 @@ app = FastAPI(title=settings.PROJECT_NAME)
 
 # CORS
 # CORS
-origins = [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "https://rural-utility-analyzer.vercel.app",
-    "https://rural-utility-analyzer.vercel.app/"
-]
+# Using regex to allow any Vercel deployment (production & previews) + localhost
+origin_regex = r"https://.*rural-utility-analyzer.*\.vercel\.app/?|http://localhost:\d+"
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origin_regex=origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
