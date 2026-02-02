@@ -88,7 +88,7 @@ def extract_text_from_image(image_path: str) -> str:
                 [tesseract_cmd, tmp_path, "stdout", "--oem", "3", "--psm", "6"],
                 capture_output=True,
                 text=True,
-                timeout=10,
+                timeout=30,
                 encoding='utf-8',
                 errors='ignore'
             )
@@ -100,7 +100,7 @@ def extract_text_from_image(image_path: str) -> str:
                 [tesseract_cmd, tmp_path, "stdout", "--oem", "3", "--psm", "11"],
                 capture_output=True,
                 text=True,
-                timeout=10,
+                timeout=30,
                 encoding='utf-8',
                 errors='ignore'
             )
