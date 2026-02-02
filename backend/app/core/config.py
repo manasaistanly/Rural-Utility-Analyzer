@@ -12,8 +12,9 @@ class Settings(BaseSettings):
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = []
 
-    # Database - Load from .env file
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "mongodb://localhost:27017/utility_analyzer")
+    
+    # Database - Pydantic will automatically load from environment variables
+    DATABASE_URL: str = "mongodb://localhost:27017/utility_analyzer"
     
     # Weather API
     WEATHER_API_KEY: str = "bd5e378503939ddaee76f12ad7a97608"
