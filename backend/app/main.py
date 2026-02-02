@@ -30,11 +30,27 @@ app.mount("/static", StaticFiles(directory="data/uploads"), name="static")
 # MongoDB connection lifecycle
 @app.on_event("startup")
 async def startup_db_client():
-    await connect_to_mongo()
+    import sys
+    try:
+        print("=" * 50, flush=True)
+        print("🚀 STARTUP EVENT TRIGGERED", flush=True)
+        print(f"DATABASE_URL from settings: {settings.DATABASE_URL[:20]}...", flush=True)
+        print("=" * 50, flush=True)
+        sys.stdout.flush()
+        await connect_to_mongo()
+        print("✅ Startup complete!", flush=True)
+    except Exception as e:
+        print(f"❌ STARTUP ERROR: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        sys.stdout.flush()
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    await close_mongo_connection()
+    try:
+        await close_mongo_connection()
+    except Exception as e:
+        print(f"Error during shutdown: {e}", flush=True)
 
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 app.include_router(bills.router, prefix=f"{settings.API_V1_STR}/bills", tags=["bills"])
