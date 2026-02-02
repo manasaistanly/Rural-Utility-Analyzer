@@ -7,9 +7,17 @@ from app.routers import auth, bills, analysis, tts
 app = FastAPI(title=settings.PROJECT_NAME)
 
 # CORS
+# CORS
+origins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://rural-utility-analyzer.vercel.app",
+    "https://rural-utility-analyzer.vercel.app/"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
