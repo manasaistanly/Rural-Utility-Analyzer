@@ -5,11 +5,11 @@ FROM python:3.10-slim
 # tesseract-ocr-eng: English language pack
 # tesseract-ocr-kan: Kannada language pack (for your multilingual bills)
 # libgl1-mesa-glx: needed for some image processing libs like OpenCV if used, safe to include
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
     tesseract-ocr-eng \
     tesseract-ocr-kan \
-    libgl1-mesa-glx \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /code
