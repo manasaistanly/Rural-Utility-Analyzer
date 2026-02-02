@@ -9,10 +9,7 @@ async def get_smart_recommendation(
     historical_consumption: List[float] = None,
     bill_type: str = 'electricity'  # New parameter to customize recommendations
 ) -> str:
-    """
-    AI-powered recommendation engine that analyzes patterns and provides actionable insights.
-    Provides different recommendations for electricity vs water bills.
-    """
+    
     
     # Get weather info
     temp = weather_data.get('main', {}).get('temp', 30)
@@ -116,10 +113,20 @@ async def get_smart_recommendation(
     
     # 5. FORECAST-SPECIFIC ADVICE
     if forecast_value > 0:
-        if language == 'te':
-            insights.append(f"🎯 వచ్చే నెల లక్ష్యం: {forecast_value - 50:.0f} యూనిట్ల క్రింద ఉంచడానికి ప్రయత్నించండి.")
+        # Calculate sensible target based on bill type
+        if bill_type == 'water':
+            # For water: suggest 10-15% reduction
+            target = max(forecast_value * 0.85, 5)  # At least 5 KL minimum
+            unit_label = "KL" if language == 'en' else "KL"
         else:
-            insights.append(f"🎯 Target for next month: Try to stay below {forecast_value - 50:.0f} units.")
+            # For electricity: suggest 10-15% reduction or min 30 units
+            target = max(forecast_value * 0.85, forecast_value - 50)
+            unit_label = "units" if language == 'en' else "యూనిట్లు"
+        
+        if language == 'te':
+            insights.append(f"🎯 వచ్చే నెల లక్ష్యం: {target:.0f} {unit_label} క్రింద ఉంచడానికి ప్రయత్నించండి.")
+        else:
+            insights.append(f"🎯 Target for next month: Try to stay below {target:.0f} {unit_label}.")
     
     # 6. NO DATA CASE
     if not insights:

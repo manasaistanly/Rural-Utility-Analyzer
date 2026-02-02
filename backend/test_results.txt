@@ -1,0 +1,92 @@
+﻿DEBUG: Set Tesseract path to C:\Program Files\Tesseract-OCR\tesseract.exe
+================================================================================
+TESTING IMPROVED OCR DATE EXTRACTION
+================================================================================
+
+================================================================================
+TEST 1: uploaded_media_0_1769852017431.jpg
+================================================================================
+python : Traceback 
+(most recent call 
+last):
+At line:1 char:1
++ python 
+test_ocr_dates.py 
+2>&1 | Out-File 
+-Encoding utf8 
+test_results. ...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (Traceba   
+ ck (most recent     
+call last)::Stri    
+ng) [], RemoteEx    
+ception
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+  File 
+"C:\Users\Manasai sta
+nly\Desktop\project x
+\backend\test_ocr_dat
+es.py", line 31, in 
+<module>
+    
+print("\n\U0001f4c4 
+EXTRACTING TEXT...")
+  File 
+"C:\Users\Manasai sta
+nly\AppData\Local\Pro
+grams\Python\Python31
+0\lib\encodings\cp125
+2.py", line 19, in 
+encode
+    return codecs.cha
+rmap_encode(input,sel
+f.errors,encoding_tab
+le)[0]
+UnicodeEncodeError: 
+'charmap' codec 
+can't encode 
+character 
+'\U0001f4c4' in 
+position 2: 
+character maps to 
+<undefined>
+
+During handling of 
+the above exception, 
+another exception 
+occurred:
+
+Traceback (most 
+recent call last):
+  File 
+"C:\Users\Manasai sta
+nly\Desktop\project x
+\backend\test_ocr_dat
+es.py", line 57, in 
+<module>
+    print(f"\n\u274c 
+ERROR: {e}")
+  File 
+"C:\Users\Manasai sta
+nly\AppData\Local\Pro
+grams\Python\Python31
+0\lib\encodings\cp125
+2.py", line 19, in 
+encode
+    return codecs.cha
+rmap_encode(input,sel
+f.errors,encoding_tab
+le)[0]
+UnicodeEncodeError: 
+'charmap' codec 
+can't encode 
+character '\u274c' 
+in position 2: 
+character maps to 
+<undefined>

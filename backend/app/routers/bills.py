@@ -7,7 +7,8 @@ from app.services.ocr_service import extract_text_from_image, parse_bill_data
 import shutil
 import os
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+import random
 
 router = APIRouter()
 
@@ -21,44 +22,49 @@ async def upload_bill(
     current_user: User = Depends(get_current_user)
 ):
     # Save file
+    print(f"DEBUG: Start upload for {file.filename}")
     file_id = str(uuid.uuid4())
     extension = file.filename.split(".")[-1] if file.filename else "jpg"
     file_path = f"{UPLOAD_DIR}/{file_id}.{extension}"
     
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
+    print(f"DEBUG: File saved to {file_path}")
         
     # Run OCR
     try:
+        print("DEBUG: Starting OCR extraction...")
         text = extract_text_from_image(file_path)
-        parsed_data = parse_bill_data(text)
+        print(f"DEBUG: OCR finished. Text First 100 chars: {text[:100]}")
         
-        # Validation
+        # Pass current date as fallback for missing dates
+        current_date = date.today()
+        parsed_data = parse_bill_data(text, uploaded_date=current_date)
+        print(f"DEBUG: Data parsed: {parsed_data}")
+        
+        # Validation - just log if OCR failed, but don't block upload
         units = parsed_data.get("units", 0)
         amount = parsed_data.get("amount", 0)
         
         if units == 0 and amount == 0:
-             if os.path.exists(file_path):
-                 os.remove(file_path)
-                 
-             raise HTTPException(
-                status_code=400, 
-                detail="OCR Failed: Unable to read 'Units' or 'Amount' from the image."
-            )
+            print(f"WARNING: OCR extracted zero values for file {file_path}. User may need to manually verify.")
 
-        # Parse date
-        final_date = date.today()
+        # Get the parsed date (already validated and normalized by parse_bill_data)
+        final_date = None
         parsed_date_str = parsed_data.get("date")
+        
         if parsed_date_str:
             try:
-                for fmt in ["%d/%m/%Y", "%d-%m-%Y", "%d/%m/%y", "%d-%m-%y"]:
-                    try:
-                        final_date = datetime.strptime(parsed_date_str, fmt).date()
-                        break
-                    except ValueError:
-                        continue
-            except Exception:
-                final_date = date.today()
+                # parse_bill_data returns dates in YYYY-MM-DD format
+                final_date = datetime.strptime(parsed_date_str, "%Y-%m-%d").date()
+                print(f"DEBUG: Using extracted date: {final_date}")
+            except Exception as e:
+                print(f"WARNING: Failed to parse date {parsed_date_str}: {e}")
+        
+        # If still no date, use uploaded date (current date)
+        if final_date is None:
+            final_date = current_date
+            print(f"DEBUG: No valid date extracted, using uploaded date: {final_date}")
         
         # Create Bill document
         new_bill = Bill(

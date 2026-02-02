@@ -4,6 +4,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { Lock, User, Zap, ArrowRight, Loader2, UserPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 
 const Login = () => {
     const { t, language, setLanguage } = useLanguage();
@@ -23,7 +24,7 @@ const Login = () => {
             formData.append('username', username);
             formData.append('password', password);
 
-            const response = await axios.post('http://localhost:8001/api/v1/auth/token', formData, {
+            const response = await axios.post(`${API_BASE_URL}/auth/token`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },

@@ -1,0 +1,20 @@
+RAW TEXT:
+WATER CONSUMPTION BIILL
+Name Advika Mate
+Address Sinhgad road,
+Pune
+Meter Information
+Meter No 0650735678
+Consumer ID 245788
+Meter Reading 258
+Previous Balance 00.0
+Fine 00.0
+Total Anount 4000.00
+Scan this QR code for UPI
+Payment
+[a] |_| oO
+ce
+5 a
+
+PARSED:
+{'units': 258.0, 'amount': 4000.0, 'date': None}

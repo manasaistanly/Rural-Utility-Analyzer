@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../config';
 import { useLanguage } from '../context/LanguageContext';
-import { Upload as UploadIcon, CheckCircle, FileText, Camera, Image as ImageIcon } from 'lucide-react';
+import { Upload as UploadIcon, CheckCircle, FileText, Camera } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const UploadPage = () => {
@@ -36,7 +37,7 @@ const UploadPage = () => {
             const token = localStorage.getItem('token');
 
             // Using axios for better error handling and automatic multipart headers
-            const response = await axios.post('http://localhost:8001/api/v1/bills/upload', formData, {
+            const response = await axios.post(`${API_BASE_URL}/bills/upload`, formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
@@ -48,8 +49,17 @@ const UploadPage = () => {
             }
         } catch (error: any) {
             console.error("Error uploading file:", error);
+            console.log("Full error response:", error.response);
+            console.log("Error detail:", error.response?.data?.detail);
             const msg = error.response?.data?.detail || error.message || "Upload failed";
-            setErrorMsg(msg);
+
+            if (msg.includes("Tesseract") || msg.includes("OCR Engine") || msg.includes("OCR Failed")) {
+                setErrorMsg(`OCR Error: ${msg}`);
+            } else if (msg.includes("Unable to read")) {
+                setErrorMsg(`OCR Validation Failed: ${msg}`);
+            } else {
+                setErrorMsg(`Upload Error: ${msg}`);
+            }
         } finally {
             setLoading(false);
         }
@@ -143,9 +153,21 @@ const UploadPage = () => {
                         className="mt-6 space-y-4"
                     >
                         {errorMsg && (
-                            <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start space-x-3 text-red-700">
-                                <div className="mt-0.5">⚠️</div>
-                                <div className="text-sm font-medium">{errorMsg}</div>
+                            <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex flex-col items-start space-y-2 text-red-700">
+                                <div className="flex items-center space-x-3">
+                                    <div className="mt-0.5">⚠️</div>
+                                    <div className="text-sm font-medium">{errorMsg}</div>
+                                </div>
+                                {errorMsg.includes("Tesseract") && (
+                                    <a
+                                        href="https://github.com/UB-Mannheim/tesseract/wiki"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs bg-red-100 px-3 py-1 rounded-lg hover:bg-red-200 transition-colors font-bold underline ml-8"
+                                    >
+                                        Download Tesseract for Windows
+                                    </a>
+                                )}
                             </div>
                         )}
 

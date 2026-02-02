@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import API_BASE_URL from '../config';
 import { useLanguage } from '../context/LanguageContext';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Volume2, Sun, Droplets, Zap, VolumeX, Eye, FileText, X } from 'lucide-react';
@@ -33,7 +34,7 @@ const Dashboard = () => {
                 const headers = { 'Authorization': `Bearer ${token}` };
 
                 // 1. Fetch Forecast & Stats
-                const forecastRes = await fetch(`http://localhost:8001/api/v1/analysis/forecast?lang=${language}&bill_type=${billType}`, { headers });
+                const forecastRes = await fetch(`${API_BASE_URL}/analysis/forecast?lang=${language}&bill_type=${billType}`, { headers });
                 const forecastData = await forecastRes.json();
 
                 setStats({
@@ -51,15 +52,21 @@ const Dashboard = () => {
                 // 2. Fetch Bill History
                 // Note: The /bills endpoint returns ALL bills. We filter client-side or could add backend filter.
                 // Assuming /bills returns all for user.
-                const billsRes = await fetch('http://localhost:8001/api/v1/bills/', { headers });
+                const billsRes = await fetch(`${API_BASE_URL}/bills/`, { headers });
                 const billsData = await billsRes.json();
 
-                // Filter bills by current type and sort by date descending
-                const filteredBills = billsData
-                    .filter((b: any) => b.bill_type === billType)
-                    .sort((a: any, b: any) => new Date(b.bill_date).getTime() - new Date(a.bill_date).getTime());
+                // Validate billsData is an array before filtering
+                if (Array.isArray(billsData)) {
+                    // Filter bills by current type and sort by date descending
+                    const filteredBills = billsData
+                        .filter((b: any) => b.bill_type === billType)
+                        .sort((a: any, b: any) => new Date(b.bill_date).getTime() - new Date(a.bill_date).getTime());
 
-                setBills(filteredBills);
+                    setBills(filteredBills);
+                } else {
+                    console.error('Bills API did not return an array:', billsData);
+                    setBills([]);
+                }
 
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -77,10 +84,34 @@ const Dashboard = () => {
             setIsSpeaking(true);
             const utterance = new SpeechSynthesisUtterance(text);
 
-            // Load Voices Logic (Simplified for brevity as it was working)
-            const voices = window.speechSynthesis.getVoices();
-            if (voices.length > 0) setVoiceAndSpeak(utterance, voices);
-            else window.speechSynthesis.onvoiceschanged = () => setVoiceAndSpeak(utterance, window.speechSynthesis.getVoices());
+            const loadAndSpeak = () => {
+                const voices = window.speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    setVoiceAndSpeak(utterance, voices);
+                } else {
+                    // Wait for voices
+                    const voiceHandler = () => {
+                        const updatedVoices = window.speechSynthesis.getVoices();
+                        if (updatedVoices.length > 0) {
+                            setVoiceAndSpeak(utterance, updatedVoices);
+                            window.speechSynthesis.removeEventListener('voiceschanged', voiceHandler);
+                        }
+                    };
+                    window.speechSynthesis.addEventListener('voiceschanged', voiceHandler);
+
+                    // Fallback if voices never load
+                    setTimeout(() => {
+                        window.speechSynthesis.removeEventListener('voiceschanged', voiceHandler);
+                        const fallbackVoices = window.speechSynthesis.getVoices();
+                        if (fallbackVoices.length === 0) {
+                            console.warn("Voices timed out, attempting default voice");
+                            setVoiceAndSpeak(utterance, []);
+                        }
+                    }, 3000);
+                }
+            };
+
+            loadAndSpeak();
 
         } else {
             alert(language === 'en' ? "Browser does not support text-to-speech" : "బ్రౌజర్ టెక్స్ట్-టు-స్పీచ్‌కు మద్దతు ఇవ్వదు");
@@ -90,13 +121,52 @@ const Dashboard = () => {
     const setVoiceAndSpeak = (utterance: SpeechSynthesisUtterance, voices: SpeechSynthesisVoice[]) => {
         utterance.lang = language === 'te' ? 'te-IN' : 'en-US';
         utterance.rate = 0.85;
+
+        // Try to find a native Telugu voice
+        let teluguVoice = null;
         if (language === 'te') {
-            const teluguVoice = voices.find(v => v.lang === 'te-IN' || v.lang.startsWith('te'));
-            if (teluguVoice) utterance.voice = teluguVoice;
+            teluguVoice = voices.find(v => v.name.includes('Google') && v.lang === 'te-IN') ||
+                voices.find(v => v.lang === 'te-IN') ||
+                voices.find(v => v.lang.startsWith('te')) ||
+                voices.find(v => v.name.toLowerCase().includes('telugu'));
         }
-        utterance.onend = () => setIsSpeaking(false);
-        utterance.onerror = () => setIsSpeaking(false);
-        window.speechSynthesis.speak(utterance);
+
+        // If native voice found, use it
+        if (teluguVoice || language === 'en') {
+            if (teluguVoice) {
+                utterance.voice = teluguVoice;
+                console.log("Using native Telugu voice:", teluguVoice.name);
+            }
+            utterance.onend = () => setIsSpeaking(false);
+            utterance.onerror = (e) => {
+                console.error("Speech synthesis error:", e);
+                setIsSpeaking(false);
+            };
+            window.speechSynthesis.speak(utterance);
+        } else {
+            // FALLBACK: Use Backend TTS Proxy (gTTS)
+            console.warn("No native Telugu voice found. Using Backend TTS Fallback.");
+            // Cancel any pending speech
+            window.speechSynthesis.cancel();
+
+            try {
+                const text = utterance.text;
+                const encodedText = encodeURIComponent(text);
+                // Use backend endpoint
+                const audio = new Audio(`${API_BASE_URL}/tts/speak?text=${encodedText}&lang=${language === 'te' ? 'te' : 'en'}`);
+
+                audio.onended = () => setIsSpeaking(false);
+                audio.onerror = (e) => {
+                    console.error("Audio fallback error:", e);
+                    setIsSpeaking(false);
+                };
+
+                audio.play();
+            } catch (err) {
+                console.error("Fallback failed:", err);
+                setIsSpeaking(false);
+            }
+        }
     };
 
     const handleVoiceSummary = () => {
@@ -140,7 +210,11 @@ const Dashboard = () => {
         if (!path) return '';
         // Path might be "data/uploads/filename.jpg". We need "filename.jpg"
         const filename = path.split('/').pop()?.split('\\').pop(); // Handle both / and \
-        return `http://localhost:8001/static/${filename}`;
+        // Construct the full URL using API_BASE_URL. 
+        // Note: API_BASE_URL is usually .../api/v1. We need to go up to root to access /static if it's mounted at root.
+        // Assuming API_BASE_URL is http://localhost:8000/api/v1
+        const baseUrl = API_BASE_URL.replace('/api/v1', '');
+        return `${baseUrl}/static/${filename}`;
     };
 
     return (

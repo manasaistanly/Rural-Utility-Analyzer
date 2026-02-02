@@ -82,25 +82,56 @@ async def get_forecast(
     # Select cost calculator
     calculate_bill_cost = calculate_water_cost if bill_type == 'water' else calculate_electricity_cost
 
-    # 4. ML Prediction
+    # 4. IMPROVED FORECASTING LOGIC
     if not consumption_history:
         forecast_value = 0
         forecast_cost = 0
     else:
-        from app.services.ml_service import ml_service
+        # Use realistic forecasting based on historical data
+        # Disable ML models until they are properly trained with user data
         
-        prediction_input = {
-            "month": __import__("datetime").datetime.now().month,
-            "day": __import__("datetime").datetime.now().day,
-            "temperature": weather_info["temperature"],
-            "humidity": weather_info["humidity"]
-        }
+        if len(consumption_history) == 1:
+            # Only one bill - use same consumption with slight seasonal adjustment
+            base_forecast = consumption_history[0]
+            
+            # Adjust based on weather (summer -> higher electricity)
+            temp = weather_info["temperature"]
+            if bill_type == 'electricity':
+                if temp > 35:  # Hot weather
+                    forecast_value = base_forecast * 1.15  # +15% for AC usage
+                elif temp > 30:
+                    forecast_value = base_forecast * 1.05  # +5%
+                elif temp < 20:  # Cool weather
+                    forecast_value = base_forecast * 0.95  # -5%
+                else:
+                    forecast_value = base_forecast
+            else:  # water
+                # Water usage is more stable
+                forecast_value = base_forecast * 1.0
+                
+        elif len(consumption_history) == 2:
+            # Two bills - use average with trend
+            avg = sum(consumption_history) / 2
+            trend_factor = consumption_history[-1] / consumption_history[-2] if consumption_history[-2] > 0 else 1
+            forecast_value = avg * trend_factor
+            
+        else:
+            # Three or more bills - use weighted average (recent months matter more)
+            recent_3 = consumption_history[-3:]
+            weights = [1, 1.5, 2]  # More weight to recent months
+            weighted_avg = sum(c * w for c, w in zip(recent_3, weights)) / sum(weights)
+            
+            # Apply seasonal adjustment
+            temp = weather_info["temperature"]
+            if bill_type == 'electricity':
+                if temp > 35:
+                    weighted_avg *= 1.10
+                elif temp < 20:
+                    weighted_avg *= 0.95
+            
+            forecast_value = weighted_avg
         
-        try:
-            forecast_value = ml_service.predict_consumption(prediction_input, consumption_history)
-        except:
-            forecast_value = sum(consumption_history[-3:]) / 3 if len(consumption_history) >= 3 else consumption_history[-1] if consumption_history else 0
-        
+        # Calculate cost based on forecast
         forecast_cost = calculate_bill_cost(forecast_value)
 
     # 5. Comparison

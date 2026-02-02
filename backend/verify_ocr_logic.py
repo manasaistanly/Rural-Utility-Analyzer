@@ -9,7 +9,7 @@ def test_ocr():
     Bill No: 12345
     Date: 15/05/2025
     
-    Units Billed: 250
+    Units Billed: 2502
     Rate: 5.00
     Net Amount: ₹1250.00
     """

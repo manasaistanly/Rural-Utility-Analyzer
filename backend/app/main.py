@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import connect_to_mongo, close_mongo_connection
-from app.routers import auth, bills, analysis
+from app.routers import auth, bills, analysis, tts
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
@@ -32,6 +32,7 @@ async def shutdown_db_client():
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 app.include_router(bills.router, prefix=f"{settings.API_V1_STR}/bills", tags=["bills"])
 app.include_router(analysis.router, prefix=f"{settings.API_V1_STR}/analysis", tags=["analysis"])
+app.include_router(tts.router, prefix=f"{settings.API_V1_STR}/tts", tags=["tts"])
 
 @app.get("/")
 def root():

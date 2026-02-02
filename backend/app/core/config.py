@@ -12,9 +12,8 @@ class Settings(BaseSettings):
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = []
 
-    # Database
-    # DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/rural_utility_db"
-    DATABASE_URL: str = "sqlite:///./sql_app.db"
+    # Database - Load from .env file
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "mongodb://localhost:27017/utility_analyzer")
     
     # Weather API
     WEATHER_API_KEY: str = "bd5e378503939ddaee76f12ad7a97608"

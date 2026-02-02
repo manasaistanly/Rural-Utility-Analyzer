@@ -13,12 +13,22 @@ async def get_database():
 
 async def connect_to_mongo():
     """Connect to MongoDB Atlas"""
-    db.client = AsyncIOMotorClient(settings.DATABASE_URL)
-    await init_beanie(
-        database=db.client.utility_analyzer,
-        document_models=[User, Bill, Appliance, WeatherData]
-    )
-    print("✅ Connected to MongoDB Atlas!")
+    try:
+        print(f"DEBUG: Attempting to connect to MongoDB...")
+        # Mask password for logs
+        masked_url = settings.DATABASE_URL.split('@')[-1] if '@' in settings.DATABASE_URL else "..."
+        print(f"DEBUG: Connection URL (masked): ...@{masked_url}")
+        
+        db.client = AsyncIOMotorClient(settings.DATABASE_URL)
+        print("DEBUG: Client created, initializing Beanie...")
+        
+        await init_beanie(
+            database=db.client.utility_analyzer,
+            document_models=[User, Bill, Appliance, WeatherData]
+        )
+        print("✅ Connected to MongoDB Atlas!")
+    except Exception as e:
+        print(f"❌ MongoDB Connection Error: {e}")
 
 async def close_mongo_connection():
     """Close MongoDB connection"""
